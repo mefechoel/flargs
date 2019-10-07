@@ -12,7 +12,7 @@ import ParamBuilder, {
 import parse from '../parser';
 
 export interface Version {
-  version: string;
+  versionNumber: string;
   flagName: string;
 }
 
@@ -22,11 +22,11 @@ export interface CommandConf {
   description?: string;
   flags: BuiltFlagConf[];
   params: BuiltParamConf[];
+  version?: Version;
 }
 
 export interface BuiltCommandConf extends CommandConf {
   name: string;
-  version?: Version;
 }
 
 function isFlagBuilder(
@@ -55,8 +55,6 @@ function invalidFlagError() {
 class CommandBuilder {
   private _conf: CommandConf;
 
-  private _version?: Version;
-
   constructor(
     conf: CommandConf = { aliases: [], flags: [], params: [] },
   ) {
@@ -81,7 +79,7 @@ class CommandBuilder {
   }
 
   version(
-    version: string,
+    versionNumber: string,
     flagBuilder?: FlagBuilder,
   ): CommandBuilder {
     if (flagBuilder && !isFlagBuilder(flagBuilder)) {
@@ -94,8 +92,9 @@ class CommandBuilder {
         .shorthand('v')
         .description('Print the version number of the programm.')
         .boolean();
-    const command = this.flag(flag);
-    command._version = { version, flagName: flag._build().name };
+    const command = this.flag(flag)._configure({
+      version: { versionNumber, flagName: flag._build().name },
+    });
     return command;
   }
 
@@ -195,7 +194,6 @@ class CommandBuilder {
     }
     const builtConf = {
       ...this._conf,
-      ...(this._version || {}),
     };
     return builtConf as BuiltCommandConf;
   }
