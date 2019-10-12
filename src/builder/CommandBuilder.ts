@@ -16,10 +16,13 @@ export interface Version {
   flagName: string;
 }
 
+export const commandBuilderSymbol = Symbol('CommandBuilder');
+
 export interface CommandConf {
   name?: string;
   aliases: string[];
   description?: string;
+  commands: BuiltCommandConf[];
   flags: BuiltFlagConf[];
   params: BuiltParamConf[];
   version?: Version;
@@ -45,6 +48,15 @@ function isParamBuilder(
   );
 }
 
+function isCommandBuilder(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  maybeCommandBuilder: CommandBuilder | any,
+): maybeCommandBuilder is CommandBuilder {
+  return !!(
+    maybeCommandBuilder && maybeCommandBuilder[commandBuilderSymbol]
+  );
+}
+
 function invalidFlagError() {
   return new Error(
     'Invalid params for .flag() method. ' +
@@ -53,16 +65,23 @@ function invalidFlagError() {
 }
 
 class CommandBuilder {
+  [commandBuilderSymbol] = true;
+
   private _conf: CommandConf;
 
   constructor(
-    conf: CommandConf = { aliases: [], flags: [], params: [] },
+    conf: CommandConf = {
+      aliases: [],
+      flags: [],
+      params: [],
+      commands: [],
+    },
   ) {
     this._conf = conf;
   }
 
   parse() {
-    return parse({ config: this._build() });
+    return parse({ schema: this._build() });
   }
 
   name(name: string): CommandBuilder {
@@ -96,6 +115,42 @@ class CommandBuilder {
       version: { versionNumber, flagName: flag._build().name },
     });
     return command;
+  }
+
+  command(command: CommandBuilder): CommandBuilder;
+
+  command(name: string, command: CommandBuilder): CommandBuilder;
+
+  command(
+    commandOrName: CommandBuilder | string,
+    commandBuilder?: CommandBuilder,
+  ): CommandBuilder {
+    if (isCommandBuilder(commandOrName)) {
+      const command = commandOrName;
+      return this._addCommand(command);
+    }
+    if (
+      typeof commandOrName === 'string' &&
+      isCommandBuilder(commandBuilder)
+    ) {
+      const name = commandOrName;
+      const command = commandBuilder.name(name);
+      return this._addCommand(command);
+    }
+    throw new Error(
+      'Invalid commands for .command() method. ' +
+        'Please specify a command builder or a name and a command builder.',
+    );
+  }
+
+  private _addCommand(
+    commandBuilder: CommandBuilder,
+  ): CommandBuilder {
+    const commands = [
+      ...this._conf.commands,
+      commandBuilder._build(),
+    ];
+    return this._configure({ commands });
   }
 
   flag(flag: FlagBuilder<FlagValueType>): CommandBuilder;

@@ -2,10 +2,10 @@ import { IsArrayElse } from '../util/types';
 
 export const flagBuilderSymbol = Symbol('FlagBuilder');
 
-type ValueType = number | string | boolean;
-type ValueArrayType = number[] | string[] | boolean[];
+export type ValueType = number | string | boolean;
+export type ValueArrayType = number[] | string[] | boolean[];
 
-enum FlagTypes {
+export enum FlagTypes {
   Number = 'number',
   String = 'string',
   Boolean = 'boolean',
