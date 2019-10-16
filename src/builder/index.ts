@@ -1,6 +1,8 @@
-import FlagBuilder from './FlagBuilder';
-import ParamBuilder from './ParamBuilder';
-import CommandBuilder from './CommandBuilder';
+import createFlagBuilder, { FlagBuilder } from './flagBuilder';
+import createParamBuilder, { ParamBuilder } from './paramBuilder';
+import createCommandBuilder, {
+  CommandBuilder,
+} from './commandBuilder';
 
 type Builder = FlagBuilder | ParamBuilder | CommandBuilder;
 
@@ -13,17 +15,17 @@ interface Flargs {
   command: BuilderFactory<CommandBuilder>;
 }
 
-function createBuilderFactory(BuilderClass: {
-  new (): Builder;
-}): (name?: string) => Builder {
-  return function builderFn(name?: string): Builder {
+function createBuilderFactory<
+  T extends { name: (name: string) => T }
+>(builderFactory: () => T): (name?: string) => T {
+  return function builderFn(name?: string): T {
     if (name && typeof name !== 'string') {
       throw new TypeError(
         'Expected either a string as "name" param or no param, ' +
           `but recieved: ${String(name)}`,
       );
     }
-    const builder = new BuilderClass();
+    const builder = builderFactory();
     if (name) {
       return builder.name(name);
     }
@@ -31,21 +33,13 @@ function createBuilderFactory(BuilderClass: {
   };
 }
 
-export const flag = createBuilderFactory(
-  FlagBuilder,
-) as BuilderFactory<FlagBuilder>;
+export const flag = createBuilderFactory(createFlagBuilder);
 
-export const param = createBuilderFactory(
-  ParamBuilder,
-) as BuilderFactory<ParamBuilder>;
+export const param = createBuilderFactory(createParamBuilder);
 
-export const command = createBuilderFactory(
-  CommandBuilder,
-) as BuilderFactory<CommandBuilder>;
+export const command = createBuilderFactory(createCommandBuilder);
 
-const flargsFn = createBuilderFactory(
-  CommandBuilder,
-) as BuilderFactory<CommandBuilder>;
+const flargsFn = createBuilderFactory(createCommandBuilder);
 
 (flargsFn as Flargs).flag = flag;
 (flargsFn as Flargs).param = param;

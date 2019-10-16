@@ -10,7 +10,9 @@
     "strict": true,
     "allowJs": true,
     "moduleResolution": "node",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationDir": "types"
   },
   "include": ["src/**/*.ts", "src/**/*.js"],
 }

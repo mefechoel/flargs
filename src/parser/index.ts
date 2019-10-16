@@ -1,10 +1,10 @@
-import { BuiltCommandConf } from '../builder/CommandBuilder';
+import { BuiltCommandConf } from '../builder/commandBuilder';
+import { BuiltFlagConf } from '../builder/flagBuilder';
 import {
-  BuiltFlagConf,
-  FlagValueType,
-  FlagTypes,
+  InputTypes,
+  InputValueType,
   ValueArrayType,
-} from '../builder/FlagBuilder';
+} from '../builder/builderFns';
 
 export interface ParserOptions {
   schema: BuiltCommandConf;
@@ -12,11 +12,11 @@ export interface ParserOptions {
 }
 
 export interface SubParseMap {
-  [key: string]: FlagValueType | SubParseMap;
+  [key: string]: InputValueType | SubParseMap;
 }
 
 export interface ParseOptions {
-  [key: string]: FlagValueType;
+  [key: string]: InputValueType;
 }
 
 export interface ParseMap {
@@ -90,7 +90,7 @@ function stripLeadingDashes(str: string): string {
 function findFlag(
   flag: string,
   cmdQueue: BuiltCommandConf[],
-): BuiltFlagConf<FlagValueType> | undefined {
+): BuiltFlagConf<InputValueType> | undefined {
   const flagQueue = cmdQueue.map(schema =>
     ((schema && schema.flags) || []).find(({ name, shorthand }) => {
       return name === flag || shorthand === flag;
@@ -147,11 +147,11 @@ function createParseMap(
 }
 
 function getFlagValue(
-  flag: BuiltFlagConf<FlagValueType>,
+  flag: BuiltFlagConf<InputValueType>,
   val: string,
-): FlagValueType {
+): InputValueType {
   switch (flag.type) {
-    case FlagTypes.Boolean: {
+    case InputTypes.Boolean: {
       if (val === 'true') return true;
       if (val === 'false') return false;
       throw new Error(
@@ -159,7 +159,7 @@ function getFlagValue(
           `Expected "true" or "false", got "${val}"`,
       );
     }
-    case FlagTypes.Number: {
+    case InputTypes.Number: {
       const numVal = Number(val);
       if (Number.isNaN(numVal)) {
         throw new Error(
@@ -169,7 +169,7 @@ function getFlagValue(
       }
       return numVal;
     }
-    case FlagTypes.String:
+    case InputTypes.String:
     default: {
       return val;
     }
@@ -183,10 +183,10 @@ function parse({
   const commandQueue: BuiltCommandConf[] = [schema];
   const parseQueue: ParseQueueItem[] = [{ name: schema.name, _: {} }];
   let state: State | null = null;
-  let flag: BuiltFlagConf<FlagValueType> | null = null;
+  let flag: BuiltFlagConf<InputValueType> | null = null;
 
-  type SetValue = (prevValue: FlagValueType) => FlagValueType;
-  const setMap = (key: string, value: FlagValueType | SetValue) => {
+  type SetValue = (prevValue: InputValueType) => InputValueType;
+  const setMap = (key: string, value: InputValueType | SetValue) => {
     const nextValue =
       typeof value === 'function'
         ? value(parseQueue[0]._[key])
@@ -215,7 +215,7 @@ function parse({
             `Flag "${arg}" could not be found in ${commandPath}`,
           );
         }
-        if (nextFlag.type === FlagTypes.Boolean) {
+        if (nextFlag.type === InputTypes.Boolean) {
           setMap(nextFlag.name, true);
         }
         state = State.Flag;
@@ -238,7 +238,7 @@ function parse({
               const arrayValue = [
                 ...((prevValue as ValueArrayType) || []),
                 value,
-              ] as FlagValueType;
+              ] as InputValueType;
               return arrayValue;
             });
             break;

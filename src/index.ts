@@ -4,35 +4,6 @@ function d(arg: any) {
   console.log(JSON.stringify(arg, null, 2));
 }
 
-// const x = flargs
-//   .flag()
-//   .name('version')
-//   .number()
-//   .shorthand('v')
-//   .default(0)
-//   ._build();
-
-// console.log(x);
-
-// const y = flargs
-//   .command()
-//   .name('asd')
-//   .flag(
-//     'flag',
-//     flargs
-//       .flag()
-//       .number()
-//       .default(0),
-//   )
-//   .description('desc')
-//   .alias('a');
-
-// console.log(d(y._build()));
-
-// const z = flargs.command().name('test');
-
-// console.log(z._build());
-
 const a = flargs()
   .version('123')
   .name('aaa')
@@ -66,6 +37,12 @@ const a = flargs()
           )
           .flag(
             flargs
+              .flag('array')
+              .array()
+              .default(['a', 'b', 'c']),
+          )
+          .flag(
+            flargs
               .flag('opt')
               .shorthand('0')
               .number()
@@ -85,3 +62,5 @@ const a = flargs()
 
 const map = a.parse();
 d(map);
+
+d(a._build());
